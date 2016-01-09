@@ -11,7 +11,16 @@ WYKORZYSTAC ARGUMENTY z konsoli (NP. JAKO TAJNE KODY DO TAJNEJ GRY)
 # obracanie krecika jak zmiana strony
 # uzupelnic opcje - kolor tla, moze chodzika, moze szybkosc gry, rozmiar okna
 # dodac pauze
+# uzupelnic readme
+# zrobic troche chwili zanim sie wlaczy krecik
 
+
+# NA TERAZ
+# DODAC CZLONY I ZEBY SIE PORUSZALY ZA NIM
+# DODAC, ZE JAK CHCE WEJSC W SWOJ OGON TO GAME OVER
+# zeby sie obracal chodzik jak zmienia kierunek
+
+#
 """
 import sys, time, random
 from PyQt4 import QtGui, QtCore
@@ -52,42 +61,45 @@ class Krtek(QtGui.QMainWindow):
         menubar = self.menuBar()
                
         # zakladka File
-        fileMenu = menubar.addMenu('&File')
+        fileMenu = menubar.addMenu('&Soubor')
       
         # podzakladka Options
-        optionsAction = QtGui.QAction('Options', self)
-        optionsAction.setShortcut('Ctrl+O')
-        optionsAction.setStatusTip('Change options')
+        optionsAction = QtGui.QAction('Možnosti', self)
+        optionsAction.setShortcut('Ctrl+M')
+        optionsAction.setStatusTip('Změna možností')
         optionsAction.triggered.connect(self.okno_opcje)
         
         fileMenu.addAction(optionsAction)
         
         # podzakladka Quit
-        exitAction = QtGui.QAction('Quit', self)
+        exitAction = QtGui.QAction('Ukončení', self)
         exitAction.setShortcut('Ctrl+Q')
-        exitAction.setStatusTip('Exit application')
+        exitAction.setStatusTip('Zavřít aplikaci')
         exitAction.triggered.connect(self.close)
         
         fileMenu.addAction(exitAction)
         
         # zakladka Help
-        helpMenu = menubar.addMenu('&Help')   
+        helpMenu = menubar.addMenu('&Pomoc')   
         
         # podzakladka About
-        aboutAction = QtGui.QAction('About', self)
-        aboutAction.setShortcut('Ctrl+A')
-        aboutAction.setStatusTip('About Krtek')
+        aboutAction = QtGui.QAction('O aplikaci', self)
+        aboutAction.setShortcut('Ctrl+H')
+        aboutAction.setStatusTip('O aplikaci Krtek')
         aboutAction.triggered.connect(self.okno_about)
         
         helpMenu.addAction(aboutAction)
         
         
         # pasek statusu
-        self.statusBar().showMessage('Ano!')
-        
+        self.statusbar = self.statusBar()
+        self.statusbar.showMessage('Ano!')
+        # laczymy info z Planszy z napisami w statusbar
+        self.plansza.doStatusBara[str].connect(self.statusbar.showMessage)
         
         #print(self.plansza.geometry())
         self.show()
+        
         #print(self.plansza.geometry())
     # ustawianie okna na srodku ekranu
     def center(self):
@@ -105,7 +117,7 @@ class Krtek(QtGui.QMainWindow):
     def okno_opcje(self):
         
         opcje =QtGui.QDialog(self)
-        opcje.setWindowTitle("Options")
+        opcje.setWindowTitle("Možnosti")
         opcje.resize(400, 400)
         opcje.show()
         
@@ -113,7 +125,7 @@ class Krtek(QtGui.QMainWindow):
     def okno_about(self):
         
         about =QtGui.QDialog(self)
-        about.setWindowTitle("About")
+        about.setWindowTitle("O aplikaci")
         about.resize(400, 400)
         l = QtGui.QVBoxLayout()
         tekst =QtGui.QLabel("""<center><h1>About Krtek</h1></center>
@@ -128,7 +140,7 @@ class Krtek(QtGui.QMainWindow):
 class Plansza(QtGui.QFrame):
     
   
-        
+    doStatusBara = QtCore.pyqtSignal(str)
     
     
     def __init__(self, parent, rozmiarOkna_Gl):
@@ -152,7 +164,7 @@ class Plansza(QtGui.QFrame):
         szybkoscGry = 300
         
         self.timer = QtCore.QBasicTimer()
-        self.timer.start(szybkoscGry, self)
+       
         
         
         positions = [(i,j) for i in range(self.szerPlanszy) for j in range(self.szerPlanszy)]
@@ -214,10 +226,14 @@ class Plansza(QtGui.QFrame):
         self.czlony = []
         self.ile_czlonow = 0
         self.czyCosZjedzone = False
+     
+      
+        
         # do ruchu
         self.setFocusPolicy(QtCore.Qt.StrongFocus)
         self.isStarted = True
-                           
+                   
+        self.timer.start(szybkoscGry, self)
                            
     def timerEvent(self, event):
         if event.timerId() == self.jedzonkoTimer.timerId():   
@@ -228,36 +244,52 @@ class Plansza(QtGui.QFrame):
         if event.timerId() == self.timer.timerId():
             # co jednostek czasy (szybkoscGry) cos robimy
             self.ruch_krecika(self.kierunek) # jaki kierunek taka pozycja
+            
             # ruszamy kreta
             self.board.addWidget(self.chodzik,self.aktual_row,self.aktual_col)
             if self.aktual_col==self.col_jedzonko and self.aktual_row ==self.row_jedzonko:
                 self.ile_czlonow = self.ile_czlonow + 1
                 self.jedzonko.hide()
-               
-                #print(self.ile_czlonow)
-            #self.update()
+                self.doStatusBara.emit("Kolik krtků: " + str(self.ile_czlonow))
+                self.czyCosZjedzone = True
+
+            # do czlonow
+            #if self.czyCosZjedzone:
+                
+            
+            
             
         else:
             super(Plansza, self).timerEvent(event)
                 
-    #def update(self):
+
                 
-                
-                
-    def dodanie_czlonow(self):
+# potrzebne info o kierunku by wiedziec gdzie go dodac
+#
+# potrzebna lista z info jakie pozycje sa zajete
+               
+    # tylko dodanie 
+    def dodanieCzlonow(self):
         krecik = QtGui.QPixmap("chodzik1.png")
         wymiarChodzika = int(self.rozmiarOkna_Gl/ self.szerPlanszy)
         krecik = krecik.scaled(wymiarChodzika,wymiarChodzika,QtCore.Qt.KeepAspectRatio)
         if self.czyCosZjedzone:
-            czlon_nazwa = str(self.ile_czlonow) #nazywam kolejne czlony numerami
+            czlon_nazwa = "czlon" + str(self.ile_czlonow)  #nazywam kolejne czlony numerami
             czlon_nazwa = QtGui.QLabel(self)
             czlon_nazwa.setPixmap(krecik)
             self.czlon_nazwa = czlon_nazwa
+            self.czlony.append(self.czlon_nazwa) # dodaje obiekty do listy!
             
-            #ktory_row = 
-            self.czlony.append(czlon_nazwa)
-            self.ile_czlonow = self.ile_czlonow +1
+            self.board.addWidget(self.nazwa,self.aktual_row, self.aktual_col)    
+            #dodanie wydarzenia dla obiektu?
+            
+           # zmiana_poz_czlonu_action = QtGui.QAction(QtCore.QCoreApplication.translate('ExchangeDockWidget',
+           #                                                                                "&refresh balance"),
+           #                                                                                self, triggered=self.zmiana_poz_czlonu())            
+            
+           # self.czlon_nazwa.addAction(zmiana_poz_czlonu_action)
             self.czyCosZjedzone = False
+
 
 
 # ustawiamy nacisnieciem strzalek kierunek tylko
@@ -332,12 +364,40 @@ class Plansza(QtGui.QFrame):
         self.jedzonkoTimer.stop()
         self.timer.stop()
         #QtGui.QSound.play("test.wav")
-        QtGui.QMessageBox.information(None, "Game over.", "You have lost." )
+        self.doStatusBara.emit("konec krtkowania :(")
+        QtGui.QMessageBox.information(None, "KONEC!", "Vaše skóre: " + str(self.ile_czlonow) )
+
+# potrzebny rodzic, kierunek, pozycja, bedzie zmieniac pozycje w zaleznosci od rodzica
+# potrzebny wyglad,
+# bedzie elementem listy self.czlony
+# nazwe zdefiniowac chyba w dodanie czlonow
 
 
+# DAĆ NA KONIEC TA KLASE, BO INDENTY ZLE SA TERAZ
+class Czlon(QtGui.QLabel):
 
-# napisać funkcje ktora by przesuwala te labelki?  ktora by je wkladala gdie indziej a poprzednia usuwala, problem z dostaniem sie do gridu i labelek                   
-                  
+    # parent - by wiedzialo w ktorym oknie sie pojawic
+    def __init__(self, parent, poprzednik, ikonka):
+        
+        super(Czlon, self).__init__(parent)
+        self.initCzlon(poprzednik, ikonka)
+    
+    def initCzlon(self, poprzednik, ikonka):
+        self.poprzednik = poprzednik
+        #DODAC KIERUNEK DO CHODZIKA JAKO ATRYBUT
+        self.kierunek = self.poprzednik.kierunek
+        # tutaj ustawiam na pozycje obecna pozycje poprzednika, czyli to musi
+        # zostac dodane przed zmiana pozycji dla glowy, poprzednika etc
+        self.aktual_row = self.poprzednik.aktual_row
+        self.aktual_col = self.poprzednik.aktual_row
+        self.setPixmap(ikonka)
+    
+        
+
+
+    #def zmiana_poz_czlonu(self, poprzednik):
+        
+       
                   
 def main():
     
