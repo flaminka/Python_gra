@@ -20,7 +20,8 @@ WYKORZYSTAC ARGUMENTY z konsoli (NP. JAKO TAJNE KODY DO TAJNEJ GRY)
 # DODAC, ZE JAK CHCE WEJSC W SWOJ OGON TO GAME OVER
 # zeby sie obracal chodzik jak zmienia kierunek
 
-#
+# dodac odpoweidnie warunki logiczne z czyNajedzony albo inne zrobic, by nie dodawal od razu tego czlonu tylko po zjedzeniu ciastka
+# zrobic by sie za nim poruszal a nie skakal
 """
 import sys, time, random
 from PyQt4 import QtGui, QtCore
@@ -161,7 +162,7 @@ class Plansza(QtGui.QFrame):
         #pamietac by jakos dostac sie do wymiarow jednej labelki i ustawic krecika
         #pod to
         self.szerPlanszy = 11 
-        szybkoscGry = 300
+        szybkoscGry = 500
         
         self.timer = QtCore.QBasicTimer()
        
@@ -198,7 +199,7 @@ class Plansza(QtGui.QFrame):
         kopiecL.setPixmap(kopiec)
         self.jedzonko = kopiecL
         self.jedzonkoTimer = QtCore.QBasicTimer()
-        czasJedzonka = 3000
+        czasJedzonka = 5000
         self.jedzonkoTimer.start(czasJedzonka, self)     
         self.row_jedzonko = self.szerPlanszy-2
         self.col_jedzonko = self.szerPlanszy-2
@@ -212,26 +213,31 @@ class Plansza(QtGui.QFrame):
         krecik = QtGui.QPixmap("chodzik1.png")
         wymiarChodzika = int(self.rozmiarOkna_Gl/ self.szerPlanszy)
         krecik = krecik.scaled(wymiarChodzika,wymiarChodzika,QtCore.Qt.KeepAspectRatio)
+        self.krecik = krecik
         krecikL = QtGui.QLabel(self)
-        krecikL.setPixmap(krecik)
+        krecikL.setPixmap(self.krecik)
         self.chodzik = krecikL
-        self.aktual_row = int(self.szerPlanszy/2)
-        self.aktual_col = int(self.szerPlanszy/2)
+        self.chodzik.aktual_row = int(self.szerPlanszy/2)
+        self.chodzik.aktual_col = int(self.szerPlanszy/2)
         grid.addWidget(self.chodzik,int(self.szerPlanszy/2),int(self.szerPlanszy/2))
         self.board = grid
         
         self.kierunek = "prawo"
-    
         # dodawanie kolejnych krecikoczlonow
         self.czlony = []
         self.ile_czlonow = 0
         self.czyCosZjedzone = False
+        self.czlonProba = Czlon(self, self.chodzik, self.krecik)
+        self.czlonProba1 = Czlon(self, self.czlonProba, self.krecik)
      
-      
-        
+     
         # do ruchu
         self.setFocusPolicy(QtCore.Qt.StrongFocus)
         self.isStarted = True
+                   
+                   
+                   
+                   
                    
         self.timer.start(szybkoscGry, self)
                            
@@ -243,15 +249,32 @@ class Plansza(QtGui.QFrame):
             self.board.addWidget(self.jedzonko, self.row_jedzonko, self.col_jedzonko)
         if event.timerId() == self.timer.timerId():
             # co jednostek czasy (szybkoscGry) cos robimy
+        
+            #rowCzlonu1 = self.aktual_row
+            #colCzlonu1 = self.aktual_col
+           
+            self.czlonProba.updatePosition()
+            self.czlonProba1.updatePosition()
             self.ruch_krecika(self.kierunek) # jaki kierunek taka pozycja
-            
+  
             # ruszamy kreta
-            self.board.addWidget(self.chodzik,self.aktual_row,self.aktual_col)
-            if self.aktual_col==self.col_jedzonko and self.aktual_row ==self.row_jedzonko:
+            self.board.addWidget(self.chodzik,self.chodzik.aktual_row,self.chodzik.aktual_col)
+            
+            if self.chodzik.aktual_col==self.col_jedzonko and self.chodzik.aktual_row ==self.row_jedzonko:
                 self.ile_czlonow = self.ile_czlonow + 1
                 self.jedzonko.hide()
                 self.doStatusBara.emit("Kolik krtků: " + str(self.ile_czlonow))
                 self.czyCosZjedzone = True
+                
+                # czlon pierwszy
+                if self.ile_czlonow == 1:
+                    self.board.addWidget(self.czlonProba, self.czlonProba.aktual_row, self.czlonProba.aktual_col)
+                if self.ile_czlonow == 2:
+                    self.board.addWidget(self.czlonProba1, self.czlonProba.aktual_row, self.czlonProba.aktual_col)
+        
+                #self.czlon1 = Czlon(self, self.chodzik, self.krecik)
+                # self.board.addWidget(self.czlon1, 1, 1)
+                
 
             # do czlonow
             #if self.czyCosZjedzone:
@@ -323,34 +346,34 @@ class Plansza(QtGui.QFrame):
     def ruch_krecika(self, wktoraStrona):
         
         if wktoraStrona == "lewo":
-            self.aktual_col = self.aktual_col -1
+            self.chodzik.aktual_col = self.chodzik.aktual_col -1
             #self.kierunek = "lewo"
-            if self.aktual_col == -1:
-                self.aktual_col = 0
+            if self.chodzik.aktual_col == -1:
+                self.chodzik.aktual_col = 0
                 self.game_over()
             #else: #wywal elsa, jak chcesz teleporty na przeciwna strone
             #    self.board.addWidget(self.chodzik,self.aktual_row,self.aktual_col)
         elif wktoraStrona == "prawo":
-            self.aktual_col = self.aktual_col +1
+            self.chodzik.aktual_col = self.chodzik.aktual_col +1
             #self.kierunek = "prawo"
-            if self.aktual_col == self.szerPlanszy:
-                self.aktual_col = self.aktual_col -1
+            if self.chodzik.aktual_col == self.szerPlanszy:
+                self.chodzik.aktual_col = self.chodzik.aktual_col - 1
                 self.game_over()
             #else:
             #    self.board.addWidget(self.chodzik,self.aktual_row,self.aktual_col)
         elif wktoraStrona == "gora":
-            self.aktual_row = self.aktual_row - 1
+            self.chodzik.aktual_row = self.chodzik.aktual_row - 1
             #self.kierunek = "gora"
-            if self.aktual_row == -1:
-                self.aktual_row = 0
+            if self.chodzik.aktual_row == -1:
+                self.chodzik.aktual_row = 0
                 self.game_over()
             #else:
             #    self.board.addWidget(self.chodzik,self.aktual_row,self.aktual_col)
         elif wktoraStrona == "dol":
-            self.aktual_row = self.aktual_row + 1
+            self.chodzik.aktual_row = self.chodzik.aktual_row + 1
             #self.kierunek = "dol"
-            if self.aktual_row == self.szerPlanszy:
-                self.aktual_row = self.aktual_row - 1
+            if self.chodzik.aktual_row == self.szerPlanszy:
+                self.chodzik.aktual_row = self.chodzik.aktual_row - 1
                 self.game_over()
             #else:
             #    self.board.addWidget(self.chodzik,self.aktual_row,self.aktual_col)
@@ -381,23 +404,21 @@ class Czlon(QtGui.QLabel):
         
         super(Czlon, self).__init__(parent)
         self.initCzlon(poprzednik, ikonka)
-    
+        self.parent = parent
     def initCzlon(self, poprzednik, ikonka):
         self.poprzednik = poprzednik
-        #DODAC KIERUNEK DO CHODZIKA JAKO ATRYBUT
-        self.kierunek = self.poprzednik.kierunek
-        # tutaj ustawiam na pozycje obecna pozycje poprzednika, czyli to musi
+       # tutaj ustawiam na pozycje obecna pozycje poprzednika, czyli to musi
         # zostac dodane przed zmiana pozycji dla glowy, poprzednika etc
-        self.aktual_row = self.poprzednik.aktual_row
-        self.aktual_col = self.poprzednik.aktual_row
+        self.aktual_row = 0
+        self.aktual_col = 0
         self.setPixmap(ikonka)
     
-        
+    def updatePosition(self):
+        self.aktual_row = self.poprzednik.aktual_row
+        self.aktual_col = self.poprzednik.aktual_col
+        self.parent.board.addWidget(self, self.aktual_row, self.aktual_col)
 
-
-    #def zmiana_poz_czlonu(self, poprzednik):
-        
-       
+ 
                   
 def main():
     
