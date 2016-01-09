@@ -9,8 +9,8 @@ WYKORZYSTAC ARGUMENTY z konsoli (NP. JAKO TAJNE KODY DO TAJNEJ GRY)
 # dac message boxa przy wychodzeniu z gry z krecikiem
 # gdy game over - ahjo dzwiek
 # obracanie krecika jak zmiana strony
-# uzupelnic opcje
-
+# uzupelnic opcje - kolor tla, moze chodzika, moze szybkosc gry, rozmiar okna
+# dodac pauze
 
 """
 import sys, time, random
@@ -148,8 +148,12 @@ class Plansza(QtGui.QFrame):
         
         #pamietac by jakos dostac sie do wymiarow jednej labelki i ustawic krecika
         #pod to
-        self.szerPlanszy = 15 
-        #szybGry = 200
+        self.szerPlanszy = 11 
+        szybkoscGry = 300
+        
+        self.timer = QtCore.QBasicTimer()
+        self.timer.start(szybkoscGry, self)
+        
         
         positions = [(i,j) for i in range(self.szerPlanszy) for j in range(self.szerPlanszy)]
         
@@ -174,6 +178,22 @@ class Plansza(QtGui.QFrame):
             grid.addWidget(labelka, *position)
         
         
+    
+        # jedzonka
+        kopiec = QtGui.QPixmap("kopiec.png") 
+        kopiec = kopiec.scaled(wymiarChodzika,wymiarChodzika,QtCore.Qt.KeepAspectRatio)
+        kopiecL = QtGui.QLabel(self)
+        kopiecL.setPixmap(kopiec)
+        self.jedzonko = kopiecL
+        self.jedzonkoTimer = QtCore.QBasicTimer()
+        czasJedzonka = 3000
+        self.jedzonkoTimer.start(czasJedzonka, self)     
+        self.row_jedzonko = self.szerPlanszy-2
+        self.col_jedzonko = self.szerPlanszy-2
+        grid.addWidget(self.jedzonko,self.row_jedzonko,self.col_jedzonko)
+                
+        
+        
         #labelka = QtGui.QLabel(self)        
         #labelka.setPixmap(QtGui.QPixmap(krecik)) 
         # mozna usuwac i dodawac addWidget w to samo miejsce widgety
@@ -187,35 +207,60 @@ class Plansza(QtGui.QFrame):
         self.aktual_col = int(self.szerPlanszy/2)
         grid.addWidget(self.chodzik,int(self.szerPlanszy/2),int(self.szerPlanszy/2))
         self.board = grid
-    
-    
-    
-        # jedzonka
-        kopiec = QtGui.QPixmap("kopiec.png") 
-        kopiec = kopiec.scaled(wymiarChodzika,wymiarChodzika,QtCore.Qt.KeepAspectRatio)
-        kopiecL = QtGui.QLabel(self)
-        kopiecL.setPixmap(kopiec)
-        self.jedzonko = kopiecL
-        self.jedzonkoTimer = QtCore.QBasicTimer()
-        czasJedzonka = 3000
-        self.jedzonkoTimer.start(czasJedzonka, self)        
-        grid.addWidget(self.jedzonko,self.szerPlanszy-2,self.szerPlanszy-2)
         
-     
-
+        self.kierunek = "prawo"
+    
+        # dodawanie kolejnych krecikoczlonow
+        self.czlony = []
+        self.ile_czlonow = 0
+        self.czyCosZjedzone = False
         # do ruchu
         self.setFocusPolicy(QtCore.Qt.StrongFocus)
         self.isStarted = True
                            
                            
     def timerEvent(self, event):
-        # timer
-        if event.timerId() == self.jedzonkoTimer.timerId():    
-            row_jedzonko = random.randint(0, self.szerPlanszy-1)
-            col_jedzonko = random.randint(0, self.szerPlanszy-1)
-            self.board.addWidget(self.jedzonko, row_jedzonko, col_jedzonko)
+        if event.timerId() == self.jedzonkoTimer.timerId():   
+            self.jedzonko.show()
+            self.row_jedzonko = random.randint(0, self.szerPlanszy-1)
+            self.col_jedzonko = random.randint(0, self.szerPlanszy-1)
+            self.board.addWidget(self.jedzonko, self.row_jedzonko, self.col_jedzonko)
+        if event.timerId() == self.timer.timerId():
+            # co jednostek czasy (szybkoscGry) cos robimy
+            self.ruch_krecika(self.kierunek) # jaki kierunek taka pozycja
+            # ruszamy kreta
+            self.board.addWidget(self.chodzik,self.aktual_row,self.aktual_col)
+            if self.aktual_col==self.col_jedzonko and self.aktual_row ==self.row_jedzonko:
+                self.ile_czlonow = self.ile_czlonow + 1
+                self.jedzonko.hide()
+               
+                #print(self.ile_czlonow)
+            #self.update()
+            
+        else:
+            super(Plansza, self).timerEvent(event)
                 
+    #def update(self):
+                
+                
+                
+    def dodanie_czlonow(self):
+        krecik = QtGui.QPixmap("chodzik1.png")
+        wymiarChodzika = int(self.rozmiarOkna_Gl/ self.szerPlanszy)
+        krecik = krecik.scaled(wymiarChodzika,wymiarChodzika,QtCore.Qt.KeepAspectRatio)
+        if self.czyCosZjedzone:
+            czlon_nazwa = str(self.ile_czlonow) #nazywam kolejne czlony numerami
+            czlon_nazwa = QtGui.QLabel(self)
+            czlon_nazwa.setPixmap(krecik)
+            self.czlon_nazwa = czlon_nazwa
+            
+            #ktory_row = 
+            self.czlony.append(czlon_nazwa)
+            self.ile_czlonow = self.ile_czlonow +1
+            self.czyCosZjedzone = False
 
+
+# ustawiamy nacisnieciem strzalek kierunek tylko
  # reakcja na wciskanie okreslonych klawiszy
     def keyPressEvent(self, event):
         
@@ -227,60 +272,65 @@ class Plansza(QtGui.QFrame):
         
         if key == QtCore.Qt.Key_Space:
             return
-        elif key == QtCore.Qt.Key_Left:
-            self.ruch_krecika("lewo")
-        elif key == QtCore.Qt.Key_Right:
-            self.ruch_krecika("prawo")
-        elif key == QtCore.Qt.Key_Up:
-            self.ruch_krecika("gora")
-        elif key == QtCore.Qt.Key_Down:
-            self.ruch_krecika("dol")
-
-
+        elif key == QtCore.Qt.Key_Left and self.kierunek != "prawo":
+            #self.ruch_krecika("lewo")
+            self.kierunek = "lewo" 
+        elif key == QtCore.Qt.Key_Right and self.kierunek != "lewo":
+            #self.ruch_krecika("prawo")
+            self.kierunek = "prawo"
+        elif key == QtCore.Qt.Key_Up and self.kierunek != "dol":
+            #self.ruch_krecika("gora")
+            self.kierunek = "gora"
+        elif key == QtCore.Qt.Key_Down and self.kierunek != "gora":
+            #self.ruch_krecika("dol")
+            self.kierunek = "dol"
         else:
             super(Plansza, self).keyPressEvent(event)
                  
-
-    def ruch_krecika(self, kierunek):
+# ustalamy nastepna pozycje krecika w zaleznosci od kierunku
+    def ruch_krecika(self, wktoraStrona):
         
-        if kierunek == "lewo":
-           # if self.aktual_col == 0:
-            #    self.aktual_col = 14
-            #else:
-             #   self.aktual_col = self.aktual_col - 1
+        if wktoraStrona == "lewo":
             self.aktual_col = self.aktual_col -1
+            #self.kierunek = "lewo"
             if self.aktual_col == -1:
-                self.aktual_col = 14
-                self.game_over()
-            else: #wywal elsa, jak chcesz teleporty na przeciwna strone
-                self.board.addWidget(self.chodzik,self.aktual_row,self.aktual_col)
-        if kierunek == "prawo":
-            self.aktual_col = self.aktual_col +1
-            if self.aktual_col == 15:
                 self.aktual_col = 0
                 self.game_over()
-            else:
-                self.board.addWidget(self.chodzik,self.aktual_row,self.aktual_col)
-        if kierunek == "gora":
-            self.aktual_row = self.aktual_row - 1
-            if self.aktual_row == -1:
-                self.aktual_row = 14
+            #else: #wywal elsa, jak chcesz teleporty na przeciwna strone
+            #    self.board.addWidget(self.chodzik,self.aktual_row,self.aktual_col)
+        elif wktoraStrona == "prawo":
+            self.aktual_col = self.aktual_col +1
+            #self.kierunek = "prawo"
+            if self.aktual_col == self.szerPlanszy:
+                self.aktual_col = self.aktual_col -1
                 self.game_over()
-            else:
-                self.board.addWidget(self.chodzik,self.aktual_row,self.aktual_col)
-        if kierunek == "dol":
-            self.aktual_row = self.aktual_row + 1
-            if self.aktual_row == 15:
+            #else:
+            #    self.board.addWidget(self.chodzik,self.aktual_row,self.aktual_col)
+        elif wktoraStrona == "gora":
+            self.aktual_row = self.aktual_row - 1
+            #self.kierunek = "gora"
+            if self.aktual_row == -1:
                 self.aktual_row = 0
                 self.game_over()
-            else:
-                self.board.addWidget(self.chodzik,self.aktual_row,self.aktual_col)
+            #else:
+            #    self.board.addWidget(self.chodzik,self.aktual_row,self.aktual_col)
+        elif wktoraStrona == "dol":
+            self.aktual_row = self.aktual_row + 1
+            #self.kierunek = "dol"
+            if self.aktual_row == self.szerPlanszy:
+                self.aktual_row = self.aktual_row - 1
+                self.game_over()
+            #else:
+            #    self.board.addWidget(self.chodzik,self.aktual_row,self.aktual_col)
         else:
             return
+        #self.board.addWidget(self.chodzik,self.aktual_row,self.aktual_col)
 
 
     def game_over(self):
         self.isStarted = False
+        self.jedzonkoTimer.stop()
+        self.timer.stop()
         #QtGui.QSound.play("test.wav")
         QtGui.QMessageBox.information(None, "Game over.", "You have lost." )
 
