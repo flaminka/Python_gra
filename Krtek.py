@@ -17,7 +17,6 @@ WYKORZYSTAC ARGUMENTY z konsoli (NP. JAKO TAJNE KODY DO TAJNEJ GRY)
 
 
 # NA TERAZ
-# DODAC, ZE JAK CHCE WEJSC W SWOJ OGON TO GAME OVER
 # zeby sie obracal chodzik jak zmienia kierunek
 
 
@@ -26,6 +25,9 @@ WYKORZYSTAC ARGUMENTY z konsoli (NP. JAKO TAJNE KODY DO TAJNEJ GRY)
 # w menu - nowa gra?? - zamknij obecny example Krtek, otworz nowy, albo planszy raczej nowy?
 # wymiary okna automatyczne!!
 # zeby nie wchodzil w siebie jak gameover
+# przyspieszanie gry przy kolejnych punktach
+# jak ustawienia zmienimy to co wtedy? nowa plansza sie laduje??? i zamykamy ta obecna?
+# czy cala gra jeszcze raz sie uruchamia? - nowa gra na tej samej zasadzie bedzie
 
 """
 import sys, time, random
@@ -179,9 +181,7 @@ class Plansza(QtGui.QFrame):
             labelka = QtGui.QLabel(self)
             labelka.setPixmap(trawka)
             self.board.addWidget(labelka, *position)
-        
-        
-            
+                       
         wymiarChodzika = int(self.rozmiarOkna_Gl/ self.szerPlanszy)
         
         # jedzonka
@@ -221,11 +221,9 @@ class Plansza(QtGui.QFrame):
         czlon_obraz = QtGui.QPixmap("czlon.png")
         czlon_obraz = czlon_obraz.scaled(wymiarChodzika,wymiarChodzika,QtCore.Qt.KeepAspectRatio)
         self.czlon_obraz = czlon_obraz
-     
-     
-     
-     
-     
+
+            
+
         # do ruchu
         self.setFocusPolicy(QtCore.Qt.StrongFocus)
         self.isStarted = True
@@ -237,32 +235,41 @@ class Plansza(QtGui.QFrame):
                            
     def timerEvent(self, event):
         
-        # dodawanie jedzonka co okreslomy czas
-        if event.timerId() == self.jedzonkoTimer.timerId():  
-            
-            self.jedzonko.show()
-            self.row_jedzonko = random.randint(0, self.szerPlanszy-1)
-            self.col_jedzonko = random.randint(0, self.szerPlanszy-1)
-            self.board.addWidget(self.jedzonko, self.row_jedzonko, self.col_jedzonko)
-            
         if event.timerId() == self.timer.timerId():
-                
-           
+                            
             czlonyInverse = self.czlony[::-1]
+            
+            # zapisywanie pozycji czlonow
+            self.zajeteRow = []                
+            self.zajeteCol = []            
+                
             for czlon in czlonyInverse:
                 czlon.updatePosition()
+                self.zajeteRow.append(czlon.aktual_row)
+                self.zajeteCol.append(czlon.aktual_col)
                 czlon.ruszCzlon()
+                
+               
+
             
-           
             self.ruch_krecika(self.kierunek) # jaki kierunek taka pozycja
+            
+            # zapisujemy aktualnie zajete miejsca, by nie stawiac tam jedzenia
+            # i by wiedziec czy gameover
+            self.miejscaZajete = []
+            self.miejscaZajete = [(i,j) for i,j in zip(self.zajeteRow, self.zajeteCol)]
 
-            # ruszamy kreta
-            self.board.addWidget(self.chodzik,self.chodzik.aktual_row,self.chodzik.aktual_col)
+            pozycjaChodzika = (self.chodzik.aktual_row, self.chodzik.aktual_col)         
+            
+            if pozycjaChodzika in self.miejscaZajete:
+                self.game_over()
+            else:
+                self.miejscaZajete.append(pozycjaChodzika)            
+                # ruszamy kreta
+                self.board.addWidget(self.chodzik,*pozycjaChodzika)
             
 
-              
-   # czy kolejnosc na liscie dobrze idzie? moze odwrotnie, moze dodatkowan funkcja...         
-            # ze krecik jeszcze potem ma pewne funkcje
+
             if self.chodzik.aktual_col==self.col_jedzonko and self.chodzik.aktual_row ==self.row_jedzonko:
                 self.ile_czlonow = self.ile_czlonow + 1
                 self.jedzonko.hide()
@@ -275,51 +282,25 @@ class Plansza(QtGui.QFrame):
                     self.ktoteraz = self.czlony[-1] 
                 
                 self.czlony.append( Czlon(self, self.ktoteraz, self.czlon_obraz) )
-                print(len(self.czlony))
-                if len(self.czlony)>1:
-                    print(self.czlony[0] == self.czlony[1])
-
-                
+                    
+        #dodawanie jedzonka co okreslomy czas
+        if event.timerId() == self.jedzonkoTimer.timerId():  
             
-            
+            self.row_jedzonko = random.randint(0, self.szerPlanszy-1)
+            self.col_jedzonko = random.randint(0, self.szerPlanszy-1)
+            self.jedzonko.show()
+            while (self.row_jedzonko, self.col_jedzonko) in self.miejscaZajete:
+                self.row_jedzonko = random.randint(0, self.szerPlanszy-1)
+                self.col_jedzonko = random.randint(0, self.szerPlanszy-1)
+            self.board.addWidget(self.jedzonko, self.row_jedzonko, self.col_jedzonko)
             
         else:
             super(Plansza, self).timerEvent(event)
-                
-
-                
-# potrzebne info o kierunku by wiedziec gdzie go dodac
-#
-# potrzebna lista z info jakie pozycje sa zajete
-               
-    # tylko dodanie 
-    #def dodanieCzlonow(self):
-        
-        
-     #   krecik = QtGui.QPixmap("chodzik1.png")
-      #  wymiarChodzika = int(self.rozmiarOkna_Gl/ self.szerPlanszy)
-       # krecik = krecik.scaled(wymiarChodzika,wymiarChodzika,QtCore.Qt.KeepAspectRatio)
-        #if self.czyCosZjedzone:
-         #   czlon_nazwa = "czlon" + str(self.ile_czlonow)  #nazywam kolejne czlony numerami
-          #  czlon_nazwa = QtGui.QLabel(self)
-           # czlon_nazwa.setPixmap(krecik)
-            #self.czlon_nazwa = czlon_nazwa
-            #self.czlony.append(self.czlon_nazwa) # dodaje obiekty do listy!
-            
-            #self.board.addWidget(self.nazwa,self.aktual_row, self.aktual_col)    
-            #dodanie wydarzenia dla obiektu?
-            
-           # zmiana_poz_czlonu_action = QtGui.QAction(QtCore.QCoreApplication.translate('ExchangeDockWidget',
-           #                                                                                "&refresh balance"),
-           #                                                                                self, triggered=self.zmiana_poz_czlonu())            
-            
-           # self.czlon_nazwa.addAction(zmiana_poz_czlonu_action)
-            #self.czyCosZjedzone = False
+                             
 
 
-
-# ustawiamy nacisnieciem strzalek kierunek tylko
-     # reakcja na wciskanie okreslonych klawiszy
+    # ustawiamy nacisnieciem strzalek kierunek tylko
+    # reakcja na wciskanie okreslonych klawiszy
     def keyPressEvent(self, event):
         
         if not self.isStarted:
@@ -431,6 +412,7 @@ class Czlon(QtGui.QLabel):
         self.aktual_col = self.poprzednik.aktual_col
 
     def ruszCzlon(self):
+        
         self.parent.board.addWidget(self, self.aktual_row, self.aktual_col)
 
 
