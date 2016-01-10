@@ -12,27 +12,31 @@ WYKORZYSTAC ARGUMENTY z konsoli (NP. JAKO TAJNE KODY DO TAJNEJ GRY)
 # uzupelnic opcje - kolor tla, moze chodzika, moze szybkosc gry, rozmiar okna
 # dodac pauze
 # uzupelnic readme
+# uzupełnić About
 # zrobic troche chwili zanim sie wlaczy krecik
 
 
 # NA TERAZ
-# DODAC CZLONY I ZEBY SIE PORUSZALY ZA NIM
 # DODAC, ZE JAK CHCE WEJSC W SWOJ OGON TO GAME OVER
 # zeby sie obracal chodzik jak zmienia kierunek
 
-# dodac odpoweidnie warunki logiczne z czyNajedzony albo inne zrobic, by nie dodawal od razu tego czlonu tylko po zjedzeniu ciastka
-# zrobic by sie za nim poruszal a nie skakal
+
+# posprzatac kod
+
+# w menu - nowa gra?? - zamknij obecny example Krtek, otworz nowy, albo planszy raczej nowy?
+# wymiary okna automatyczne!!
+# zeby nie wchodzil w siebie jak gameover
+
 """
 import sys, time, random
 from PyQt4 import QtGui, QtCore
 
-
-
-# dziedziczymy po QtGui.QWidget
+# GLOWNA APLIKACJA
 class Krtek(QtGui.QMainWindow):
     
     #konstruktor
     def __init__(self):
+        
         super(Krtek, self).__init__()
         
         self.initUI()
@@ -41,6 +45,7 @@ class Krtek(QtGui.QMainWindow):
     
         self.rozmiarOkna = 600
     
+        # USTAWIENIA PODSTAWOWE OKNA
         # na razie nie ogarnelam jak dostac zaktualizowane wymiary centralWidget
         # przed funkcja show() dla okna glownego, wiec wiem z wypisywan po show
         # ze pasek menu i pasek stanu zabieraja 47 px okna, a ja chce kwadracik
@@ -50,14 +55,7 @@ class Krtek(QtGui.QMainWindow):
         self.setWindowTitle('KRTEK')
         self.setWindowIcon(QtGui.QIcon('ikonka1.png'))       
         
-
-
-
-        # ustawiam plansze gry w centrum aplikacji i przekazuje jej info o 
-        # wymiarze okna glownego (to docelowe, tu 600)
-        self.plansza = Plansza(self, self.rozmiarOkna)
-        self.setCentralWidget(self.plansza)
-
+        
         # pasek menu
         menubar = self.menuBar()
                
@@ -95,13 +93,22 @@ class Krtek(QtGui.QMainWindow):
         # pasek statusu
         self.statusbar = self.statusBar()
         self.statusbar.showMessage('Ano!')
+        
+        
+        
+        # USTAWIENIE CENTRALNEGO WIDGETU
+        # ustawiam plansze gry w centrum aplikacji i przekazuje jej info o 
+        # wymiarze okna glownego (to docelowe, tu 600)
+        self.plansza = Plansza(self, self.rozmiarOkna)
+        self.setCentralWidget(self.plansza)
+        
         # laczymy info z Planszy z napisami w statusbar
         self.plansza.doStatusBara[str].connect(self.statusbar.showMessage)
         
-        #print(self.plansza.geometry())
         self.show()
         
-        #print(self.plansza.geometry())
+        
+        
     # ustawianie okna na srodku ekranu
     def center(self):
         
@@ -136,8 +143,7 @@ class Krtek(QtGui.QMainWindow):
         about.show()
 
 
-        
-        
+
 class Plansza(QtGui.QFrame):
     
   
@@ -151,67 +157,49 @@ class Plansza(QtGui.QFrame):
         
     def initPlansza(self,rozmiarOkna_Gl):
         
-        self.rozmiarOkna_Gl = rozmiarOkna_Gl        
-        
-        
-        grid = QtGui.QGridLayout()
-        grid.setSpacing(0)
-        
-        self.setLayout(grid)
-        
         #pamietac by jakos dostac sie do wymiarow jednej labelki i ustawic krecika
         #pod to
+        self.rozmiarOkna_Gl = rozmiarOkna_Gl        
         self.szerPlanszy = 11 
-        szybkoscGry = 500
+        szybkoscGry = 300
         
-        self.timer = QtCore.QBasicTimer()
-       
-        
-        
-        positions = [(i,j) for i in range(self.szerPlanszy) for j in range(self.szerPlanszy)]
-        
-        #obrazki
-        wymiarChodzika = int(self.rozmiarOkna_Gl/ self.szerPlanszy)
-        
+        # LAYOUT GRY
+        grid = QtGui.QGridLayout()
+        grid.setSpacing(0)
+        self.setLayout(grid)
+        self.board = grid
 
         # tło
         trawka = QtGui.QPixmap("trawka1.png")  
-        
-     
-        #chodzik1 = chodzik.scaled(60,60,QtCore.Qt.KeepAspectRatio)
+
+        positions = [(i,j) for i in range(self.szerPlanszy) for j in range(self.szerPlanszy)]
         
         for position in positions:
             
             labelka = QtGui.QLabel(self)
-            #labelka.setStyleSheet("QLabel { background-color : red }")
-            #if position[0]==0 or position[1]==0 or position[0]==14 or position[1]==14:            
-            #    labelka.setPixmap(droga)
-           # else:
             labelka.setPixmap(trawka)
-            grid.addWidget(labelka, *position)
+            self.board.addWidget(labelka, *position)
         
         
-    
+            
+        wymiarChodzika = int(self.rozmiarOkna_Gl/ self.szerPlanszy)
+        
         # jedzonka
         kopiec = QtGui.QPixmap("kopiec.png") 
         kopiec = kopiec.scaled(wymiarChodzika,wymiarChodzika,QtCore.Qt.KeepAspectRatio)
         kopiecL = QtGui.QLabel(self)
         kopiecL.setPixmap(kopiec)
         self.jedzonko = kopiecL
-        self.jedzonkoTimer = QtCore.QBasicTimer()
-        czasJedzonka = 5000
-        self.jedzonkoTimer.start(czasJedzonka, self)     
         self.row_jedzonko = self.szerPlanszy-2
         self.col_jedzonko = self.szerPlanszy-2
         grid.addWidget(self.jedzonko,self.row_jedzonko,self.col_jedzonko)
-                
         
-        
-        #labelka = QtGui.QLabel(self)        
-        #labelka.setPixmap(QtGui.QPixmap(krecik)) 
-        # mozna usuwac i dodawac addWidget w to samo miejsce widgety
+        self.jedzonkoTimer = QtCore.QBasicTimer()
+        czasJedzonka = 4000
+        self.jedzonkoTimer.start(czasJedzonka, self)  
+
+        # chodzik
         krecik = QtGui.QPixmap("chodzik1.png")
-        wymiarChodzika = int(self.rozmiarOkna_Gl/ self.szerPlanszy)
         krecik = krecik.scaled(wymiarChodzika,wymiarChodzika,QtCore.Qt.KeepAspectRatio)
         self.krecik = krecik
         krecikL = QtGui.QLabel(self)
@@ -220,15 +208,22 @@ class Plansza(QtGui.QFrame):
         self.chodzik.aktual_row = int(self.szerPlanszy/2)
         self.chodzik.aktual_col = int(self.szerPlanszy/2)
         grid.addWidget(self.chodzik,int(self.szerPlanszy/2),int(self.szerPlanszy/2))
-        self.board = grid
+        
         
         self.kierunek = "prawo"
+        
         # dodawanie kolejnych krecikoczlonow
         self.czlony = []
         self.ile_czlonow = 0
         self.czyCosZjedzone = False
-        self.czlonProba = Czlon(self, self.chodzik, self.krecik)
-        self.czlonProba1 = Czlon(self, self.czlonProba, self.krecik)
+        
+        # do czlonow obrazek
+        czlon_obraz = QtGui.QPixmap("czlon.png")
+        czlon_obraz = czlon_obraz.scaled(wymiarChodzika,wymiarChodzika,QtCore.Qt.KeepAspectRatio)
+        self.czlon_obraz = czlon_obraz
+     
+     
+     
      
      
         # do ruchu
@@ -237,47 +232,53 @@ class Plansza(QtGui.QFrame):
                    
                    
                    
-                   
-                   
+        self.timer = QtCore.QBasicTimer() 
         self.timer.start(szybkoscGry, self)
                            
     def timerEvent(self, event):
-        if event.timerId() == self.jedzonkoTimer.timerId():   
+        
+        # dodawanie jedzonka co okreslomy czas
+        if event.timerId() == self.jedzonkoTimer.timerId():  
+            
             self.jedzonko.show()
             self.row_jedzonko = random.randint(0, self.szerPlanszy-1)
             self.col_jedzonko = random.randint(0, self.szerPlanszy-1)
             self.board.addWidget(self.jedzonko, self.row_jedzonko, self.col_jedzonko)
+            
         if event.timerId() == self.timer.timerId():
-            # co jednostek czasy (szybkoscGry) cos robimy
-        
-            #rowCzlonu1 = self.aktual_row
-            #colCzlonu1 = self.aktual_col
+                
            
-            self.czlonProba.updatePosition()
-            self.czlonProba1.updatePosition()
+            czlonyInverse = self.czlony[::-1]
+            for czlon in czlonyInverse:
+                czlon.updatePosition()
+                czlon.ruszCzlon()
+            
+           
             self.ruch_krecika(self.kierunek) # jaki kierunek taka pozycja
-  
+
             # ruszamy kreta
             self.board.addWidget(self.chodzik,self.chodzik.aktual_row,self.chodzik.aktual_col)
             
+
+              
+   # czy kolejnosc na liscie dobrze idzie? moze odwrotnie, moze dodatkowan funkcja...         
+            # ze krecik jeszcze potem ma pewne funkcje
             if self.chodzik.aktual_col==self.col_jedzonko and self.chodzik.aktual_row ==self.row_jedzonko:
                 self.ile_czlonow = self.ile_czlonow + 1
                 self.jedzonko.hide()
                 self.doStatusBara.emit("Kolik krtků: " + str(self.ile_czlonow))
                 self.czyCosZjedzone = True
                 
-                # czlon pierwszy
                 if self.ile_czlonow == 1:
-                    self.board.addWidget(self.czlonProba, self.czlonProba.aktual_row, self.czlonProba.aktual_col)
-                if self.ile_czlonow == 2:
-                    self.board.addWidget(self.czlonProba1, self.czlonProba.aktual_row, self.czlonProba.aktual_col)
-        
-                #self.czlon1 = Czlon(self, self.chodzik, self.krecik)
-                # self.board.addWidget(self.czlon1, 1, 1)
+                    self.ktoteraz = self.chodzik
+                else:
+                    self.ktoteraz = self.czlony[-1] 
                 
+                self.czlony.append( Czlon(self, self.ktoteraz, self.czlon_obraz) )
+                print(len(self.czlony))
+                if len(self.czlony)>1:
+                    print(self.czlony[0] == self.czlony[1])
 
-            # do czlonow
-            #if self.czyCosZjedzone:
                 
             
             
@@ -292,18 +293,20 @@ class Plansza(QtGui.QFrame):
 # potrzebna lista z info jakie pozycje sa zajete
                
     # tylko dodanie 
-    def dodanieCzlonow(self):
-        krecik = QtGui.QPixmap("chodzik1.png")
-        wymiarChodzika = int(self.rozmiarOkna_Gl/ self.szerPlanszy)
-        krecik = krecik.scaled(wymiarChodzika,wymiarChodzika,QtCore.Qt.KeepAspectRatio)
-        if self.czyCosZjedzone:
-            czlon_nazwa = "czlon" + str(self.ile_czlonow)  #nazywam kolejne czlony numerami
-            czlon_nazwa = QtGui.QLabel(self)
-            czlon_nazwa.setPixmap(krecik)
-            self.czlon_nazwa = czlon_nazwa
-            self.czlony.append(self.czlon_nazwa) # dodaje obiekty do listy!
+    #def dodanieCzlonow(self):
+        
+        
+     #   krecik = QtGui.QPixmap("chodzik1.png")
+      #  wymiarChodzika = int(self.rozmiarOkna_Gl/ self.szerPlanszy)
+       # krecik = krecik.scaled(wymiarChodzika,wymiarChodzika,QtCore.Qt.KeepAspectRatio)
+        #if self.czyCosZjedzone:
+         #   czlon_nazwa = "czlon" + str(self.ile_czlonow)  #nazywam kolejne czlony numerami
+          #  czlon_nazwa = QtGui.QLabel(self)
+           # czlon_nazwa.setPixmap(krecik)
+            #self.czlon_nazwa = czlon_nazwa
+            #self.czlony.append(self.czlon_nazwa) # dodaje obiekty do listy!
             
-            self.board.addWidget(self.nazwa,self.aktual_row, self.aktual_col)    
+            #self.board.addWidget(self.nazwa,self.aktual_row, self.aktual_col)    
             #dodanie wydarzenia dla obiektu?
             
            # zmiana_poz_czlonu_action = QtGui.QAction(QtCore.QCoreApplication.translate('ExchangeDockWidget',
@@ -311,12 +314,12 @@ class Plansza(QtGui.QFrame):
            #                                                                                self, triggered=self.zmiana_poz_czlonu())            
             
            # self.czlon_nazwa.addAction(zmiana_poz_czlonu_action)
-            self.czyCosZjedzone = False
+            #self.czyCosZjedzone = False
 
 
 
 # ustawiamy nacisnieciem strzalek kierunek tylko
- # reakcja na wciskanie okreslonych klawiszy
+     # reakcja na wciskanie okreslonych klawiszy
     def keyPressEvent(self, event):
         
         if not self.isStarted:
@@ -342,12 +345,14 @@ class Plansza(QtGui.QFrame):
         else:
             super(Plansza, self).keyPressEvent(event)
                  
-# ustalamy nastepna pozycje krecika w zaleznosci od kierunku
+                 
+    # ustalamy nastepna pozycje krecika w zaleznosci od kierunku
     def ruch_krecika(self, wktoraStrona):
         
         if wktoraStrona == "lewo":
             self.chodzik.aktual_col = self.chodzik.aktual_col -1
             #self.kierunek = "lewo"
+            # jak wyjdzie poza plansze to koniec gry
             if self.chodzik.aktual_col == -1:
                 self.chodzik.aktual_col = 0
                 self.game_over()
@@ -382,8 +387,10 @@ class Plansza(QtGui.QFrame):
         #self.board.addWidget(self.chodzik,self.aktual_row,self.aktual_col)
 
 
+    # konczenie gry
     def game_over(self):
-        self.isStarted = False
+        
+        self.isStarted = False # ze klawisze juz nie dzialaja (KeyEvent patrz)
         self.jedzonkoTimer.stop()
         self.timer.stop()
         #QtGui.QSound.play("test.wav")
@@ -399,48 +406,58 @@ class Plansza(QtGui.QFrame):
 # DAĆ NA KONIEC TA KLASE, BO INDENTY ZLE SA TERAZ
 class Czlon(QtGui.QLabel):
 
-    # parent - by wiedzialo w ktorym oknie sie pojawic
+    # konstruktor (parent - by wiedzialo w ktorym oknie sie pojawic)
     def __init__(self, parent, poprzednik, ikonka):
         
         super(Czlon, self).__init__(parent)
-        self.initCzlon(poprzednik, ikonka)
+        
         self.parent = parent
-    def initCzlon(self, poprzednik, ikonka):
         self.poprzednik = poprzednik
-       # tutaj ustawiam na pozycje obecna pozycje poprzednika, czyli to musi
-        # zostac dodane przed zmiana pozycji dla glowy, poprzednika etc
+        self.ikonka = ikonka          
+        
+        self.initCzlon()
+      
+        
+    def initCzlon(self):
+        
         self.aktual_row = 0
         self.aktual_col = 0
-        self.setPixmap(ikonka)
+        self.setPixmap(self.ikonka)
     
+    # funkcja do sledzenia polozenia rodzica
     def updatePosition(self):
+        
         self.aktual_row = self.poprzednik.aktual_row
         self.aktual_col = self.poprzednik.aktual_col
+
+    def ruszCzlon(self):
         self.parent.board.addWidget(self, self.aktual_row, self.aktual_col)
 
+
+# URUCHAMIANIE APLIKACJI       
  
-                  
 def main():
-    
-    
 
     app =  QtGui.QApplication(sys.argv)
 
     # ekran powitalny
-    witaj_obraz =  QtGui.QPixmap('tytul.png')
-    witaj_ekran =  QtGui.QSplashScreen(witaj_obraz,  QtCore.Qt.WindowStaysOnTopHint)
+    witaj_obraz = QtGui.QPixmap('tytul.png')
+    witaj_ekran = QtGui.QSplashScreen(witaj_obraz, QtCore.Qt.WindowStaysOnTopHint)
     witaj_ekran.setMask(witaj_obraz.mask())
     witaj_ekran.show()
     app.processEvents()
 
-    # ile czasu wyswietlac Krecika
-    time.sleep(2)
-    # uruchomienie glownej aplikacji
+    # uruchomienie glownej aplikacji (juz tutaj to, by sie zaladowala wczesniej)
     Krtek_apka = Krtek()
-    #witaj_ekran.finish(Krtek_apka)
-
     
+    # ile czasu wyswietlac ekran powitalny
+    time.sleep(2)
+    
+    # zamkniecie ekranu powitalnego
     witaj_ekran.close()
+    #witaj_ekran.finish(Krtek_apka) - zeby uzaleznic jedno okno od drugiego
+
+    #pokazanie aplikacji glownej
     Krtek_apka.show()
 
     sys.exit(app.exec_())
