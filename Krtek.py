@@ -9,29 +9,25 @@ WYKORZYSTAC ARGUMENTY z konsoli (NP. JAKO TAJNE KODY DO TAJNEJ GRY)
 # dac message boxa przy wychodzeniu z gry z krecikiem
 # gdy game over - ahjo dzwiek
 # obracanie krecika jak zmiana strony
-# uzupelnic opcje - kolor tla, moze chodzika, moze szybkosc gry, rozmiar okna
-# dodac pauze
-# uzupelnic readme
-# uzupełnić About
 # zrobic troche chwili zanim sie wlaczy krecik
 
 
-# NA TERAZ
-# zeby sie obracal chodzik jak zmienia kierunek
-
+# uzupelnic opcje - kolor tla, moze chodzika, moze szybkosc gry, rozmiar okna
+# uzupelnic readme
+# uzupełnić About
 
 # posprzatac kod
 
 # w menu - nowa gra?? - zamknij obecny example Krtek, otworz nowy, albo planszy raczej nowy?
 # wymiary okna automatyczne!!
-# zeby nie wchodzil w siebie jak gameover
-# przyspieszanie gry przy kolejnych punktach
 # jak ustawienia zmienimy to co wtedy? nowa plansza sie laduje??? i zamykamy ta obecna?
 # czy cala gra jeszcze raz sie uruchamia? - nowa gra na tej samej zasadzie bedzie
 
 """
 import sys, time, random
 from PyQt4 import QtGui, QtCore
+
+
 
 # GLOWNA APLIKACJA
 class Krtek(QtGui.QMainWindow):
@@ -84,7 +80,7 @@ class Krtek(QtGui.QMainWindow):
         helpMenu = menubar.addMenu('&Pomoc')   
         
         # podzakladka About
-        aboutAction = QtGui.QAction('O aplikaci', self)
+        aboutAction = QtGui.QAction('O aplikaci (eng)', self)
         aboutAction.setShortcut('Ctrl+H')
         aboutAction.setStatusTip('O aplikaci Krtek')
         aboutAction.triggered.connect(self.okno_about)
@@ -126,23 +122,55 @@ class Krtek(QtGui.QMainWindow):
     # okno Options
     def okno_opcje(self):
         
-        opcje =QtGui.QDialog(self)
-        opcje.setWindowTitle("Možnosti")
-        opcje.resize(400, 400)
+        opcje = oknoOpcji(self)
         opcje.show()
         
     # okno About
     def okno_about(self):
         
         about =QtGui.QDialog(self)
-        about.setWindowTitle("O aplikaci")
-        about.resize(400, 400)
+        about.setWindowTitle("O aplikaci (eng)")
+        about.resize(350, 350)
         l = QtGui.QVBoxLayout()
-        tekst =QtGui.QLabel("""<center><h1>About Krtek</h1></center>
-        This game was created by me""")
+        
+        # bo czemu nie html
+        tekst =QtGui.QLabel("""
+        <center><IMG SRC="ikonka1.png" ALT="ikonka" WIDTH=150 HEIGHT=150></center>
+        <center><h2>Krtek 1.0</h2></center>
+        <center><h4>The Czech version of popular Snake game</h4></center>
+        <center><h4>Copyright © 2016 Ewa Baranowska </h4></center>
+        <center><h4>Inspired by Krtek (Copyright © Zdeňek Miler)</h4></center>
+        <center><h4>For bug reports, please go to my Github <a href="https://github.com/flaminka/Python_gra">website</a> </h4></center>
+        """)
+        tekst.setOpenExternalLinks(True)
         l.addWidget(tekst)
         about.setLayout(l)
         about.show()
+        
+
+class oknoOpcji(QtGui.QDialog):
+    
+    def __init__(self, parent):
+        
+        super(oknoOpcji, self).__init__(parent)
+        
+        self.initOknoOpcji()
+
+    def initOknoOpcji(self):
+    
+
+        self.setWindowTitle("Možnosti")
+        self.resize(400, 400)
+        #self.show()
+
+
+
+
+
+
+
+
+
 
 
 
@@ -163,7 +191,7 @@ class Plansza(QtGui.QFrame):
         #pod to
         self.rozmiarOkna_Gl = rozmiarOkna_Gl        
         self.szerPlanszy = 11 
-        szybkoscGry = 300
+        self.szybkoscGry = 300
         
         # LAYOUT GRY
         grid = QtGui.QGridLayout()
@@ -195,8 +223,8 @@ class Plansza(QtGui.QFrame):
         grid.addWidget(self.jedzonko,self.row_jedzonko,self.col_jedzonko)
         
         self.jedzonkoTimer = QtCore.QBasicTimer()
-        czasJedzonka = 4000
-        self.jedzonkoTimer.start(czasJedzonka, self)  
+        self.czasJedzonka = 4000
+        self.jedzonkoTimer.start(self.czasJedzonka, self)  
 
         # chodzik
         krecik = QtGui.QPixmap("chodzik1.png")
@@ -221,7 +249,6 @@ class Plansza(QtGui.QFrame):
         czlon_obraz = QtGui.QPixmap("czlon.png")
         czlon_obraz = czlon_obraz.scaled(wymiarChodzika,wymiarChodzika,QtCore.Qt.KeepAspectRatio)
         self.czlon_obraz = czlon_obraz
-
             
 
         # do ruchu
@@ -231,7 +258,8 @@ class Plansza(QtGui.QFrame):
                    
                    
         self.timer = QtCore.QBasicTimer() 
-        self.timer.start(szybkoscGry, self)
+        self.timer.start(self.szybkoscGry, self)
+        self.isPaused = False
                            
     def timerEvent(self, event):
         
@@ -242,6 +270,7 @@ class Plansza(QtGui.QFrame):
             # zapisywanie pozycji czlonow
             self.zajeteRow = []                
             self.zajeteCol = []            
+                
                 
             for czlon in czlonyInverse:
                 czlon.updatePosition()
@@ -261,7 +290,8 @@ class Plansza(QtGui.QFrame):
 
             pozycjaChodzika = (self.chodzik.aktual_row, self.chodzik.aktual_col)         
             
-            if pozycjaChodzika in self.miejscaZajete:
+            # jesli wejdzie chodzik w czlon game_over (i nie bylo przedtem gameover)
+            if pozycjaChodzika in self.miejscaZajete and self.isStarted:
                 self.game_over()
             else:
                 self.miejscaZajete.append(pozycjaChodzika)            
@@ -282,7 +312,12 @@ class Plansza(QtGui.QFrame):
                     self.ktoteraz = self.czlony[-1] 
                 
                 self.czlony.append( Czlon(self, self.ktoteraz, self.czlon_obraz) )
-                    
+                
+                # przyspieszamy gre wraz ze zjedzeniem kopca
+                if self.szybkoscGry > 10:
+                    self.szybkoscGry = self.szybkoscGry - 10
+                    self.timer.start(self.szybkoscGry, self)
+                        
         #dodawanie jedzonka co okreslomy czas
         if event.timerId() == self.jedzonkoTimer.timerId():  
             
@@ -310,7 +345,7 @@ class Plansza(QtGui.QFrame):
         key = event.key()
         
         if key == QtCore.Qt.Key_Space:
-            return
+            self.zatrzymajGre()
         elif key == QtCore.Qt.Key_Left and self.kierunek != "prawo":
             #self.ruch_krecika("lewo")
             self.kierunek = "lewo" 
@@ -325,7 +360,25 @@ class Plansza(QtGui.QFrame):
             self.kierunek = "dol"
         else:
             super(Plansza, self).keyPressEvent(event)
-                 
+     
+    def zatrzymajGre(self):
+        
+        if not self.isStarted:
+            return
+
+        self.isPaused = not self.isPaused
+        
+        if self.isPaused:
+            self.timer.stop()
+            self.jedzonkoTimer.stop()
+            self.doStatusBara.emit("Přestávka")
+            
+        else:
+            self.timer.start(self.szybkoscGry, self)
+            self.jedzonkoTimer.start(self.czasJedzonka, self)
+            self.doStatusBara.emit("Kolik krtků: " + str(self.ile_czlonow))
+
+            
                  
     # ustalamy nastepna pozycje krecika w zaleznosci od kierunku
     def ruch_krecika(self, wktoraStrona):
@@ -335,32 +388,36 @@ class Plansza(QtGui.QFrame):
             #self.kierunek = "lewo"
             # jak wyjdzie poza plansze to koniec gry
             if self.chodzik.aktual_col == -1:
-                self.chodzik.aktual_col = 0
                 self.game_over()
+                self.chodzik.aktual_col = 0
+                
             #else: #wywal elsa, jak chcesz teleporty na przeciwna strone
             #    self.board.addWidget(self.chodzik,self.aktual_row,self.aktual_col)
         elif wktoraStrona == "prawo":
             self.chodzik.aktual_col = self.chodzik.aktual_col +1
             #self.kierunek = "prawo"
             if self.chodzik.aktual_col == self.szerPlanszy:
-                self.chodzik.aktual_col = self.chodzik.aktual_col - 1
                 self.game_over()
+                self.chodzik.aktual_col = self.chodzik.aktual_col - 1
+                
             #else:
             #    self.board.addWidget(self.chodzik,self.aktual_row,self.aktual_col)
         elif wktoraStrona == "gora":
             self.chodzik.aktual_row = self.chodzik.aktual_row - 1
             #self.kierunek = "gora"
             if self.chodzik.aktual_row == -1:
-                self.chodzik.aktual_row = 0
                 self.game_over()
+                self.chodzik.aktual_row = 0
+                
             #else:
             #    self.board.addWidget(self.chodzik,self.aktual_row,self.aktual_col)
         elif wktoraStrona == "dol":
             self.chodzik.aktual_row = self.chodzik.aktual_row + 1
             #self.kierunek = "dol"
             if self.chodzik.aktual_row == self.szerPlanszy:
-                self.chodzik.aktual_row = self.chodzik.aktual_row - 1
                 self.game_over()
+                self.chodzik.aktual_row = self.chodzik.aktual_row - 1
+                
             #else:
             #    self.board.addWidget(self.chodzik,self.aktual_row,self.aktual_col)
         else:
@@ -371,13 +428,22 @@ class Plansza(QtGui.QFrame):
     # konczenie gry
     def game_over(self):
         
+        # jak konczy sie gra, to chowamy wszystkie czlony na planszy
+        if len(self.czlony) > 0:
+            for czlon in self.czlony:
+                czlon.hide()
         self.isStarted = False # ze klawisze juz nie dzialaja (KeyEvent patrz)
+        self.timer.stop()        
         self.jedzonkoTimer.stop()
-        self.timer.stop()
         #QtGui.QSound.play("test.wav")
         self.doStatusBara.emit("konec krtkowania :(")
         QtGui.QMessageBox.information(None, "KONEC!", "Vaše skóre: " + str(self.ile_czlonow) )
+        
+        
 
+        
+        
+        
 # potrzebny rodzic, kierunek, pozycja, bedzie zmieniac pozycje w zaleznosci od rodzica
 # potrzebny wyglad,
 # bedzie elementem listy self.czlony
@@ -407,12 +473,10 @@ class Czlon(QtGui.QLabel):
     
     # funkcja do sledzenia polozenia rodzica
     def updatePosition(self):
-        
         self.aktual_row = self.poprzednik.aktual_row
         self.aktual_col = self.poprzednik.aktual_col
 
     def ruszCzlon(self):
-        
         self.parent.board.addWidget(self, self.aktual_row, self.aktual_col)
 
 
