@@ -13,15 +13,26 @@ WYKORZYSTAC ARGUMENTY z konsoli (NP. JAKO TAJNE KODY DO TAJNEJ GRY)
 
 
 # uzupelnic opcje - kolor tla, moze chodzika, moze szybkosc gry, rozmiar okna
-# uzupelnic readme
-# uzupełnić About
-
 # posprzatac kod
 
 # w menu - nowa gra?? - zamknij obecny example Krtek, otworz nowy, albo planszy raczej nowy?
 # wymiary okna automatyczne!!
 # jak ustawienia zmienimy to co wtedy? nowa plansza sie laduje??? i zamykamy ta obecna?
 # czy cala gra jeszcze raz sie uruchamia? - nowa gra na tej samej zasadzie bedzie
+####zmiana wielkosci okna
+        ### zmiana krecikochodzika
+
+
+http://stackoverflow.com/questions/13422995/set-qlineedit-to-accept-only-numbers
+# zrobić Qline z opcja tylko liczb wpisania (albo comboboxa z szybkościami)
+# to samo dla jedzenia
+# combobox dla  trawki
+
+
+# zrobic wydarzenie z przyciskiem ok - przypisuje zmiennym globalbym te lokalne wartosci i inicjuje od nowa plansze
+# nie dziala tworzenie nowej planszy - moze dac to tym singal
+# pamietac by zamienic napisy tla na nazwy plikow .png!!!
+
 
 """
 import sys, time, random
@@ -142,7 +153,7 @@ class Krtek(QtGui.QMainWindow):
         <center><h4>Inspired by Krtek (Copyright © Zdeňek Miler)</h4></center>
         <center><h4>For bug reports, please go to my Github <a href="https://github.com/flaminka/Python_gra">website</a> </h4></center>
         """)
-        tekst.setOpenExternalLinks(True)
+        tekst.setOpenExternalLinks(True) # by otworzylo link po kliknieciu
         l.addWidget(tekst)
         about.setLayout(l)
         about.show()
@@ -154,6 +165,7 @@ class oknoOpcji(QtGui.QDialog):
         
         super(oknoOpcji, self).__init__(parent)
         
+        self.parent = parent
         self.initOknoOpcji()
 
     def initOknoOpcji(self):
@@ -161,17 +173,90 @@ class oknoOpcji(QtGui.QDialog):
 
         self.setWindowTitle("Možnosti")
         self.resize(400, 400)
-        #self.show()
+        
+        grid = QtGui.QGridLayout()
+        grid.setSpacing(10)
+        self.setLayout(grid)
+        self.board = grid
+        
+        
+        
+        self.predkosc = 0
+        self.jedzenieCzas = 0
+        self.tlo = "trawka.png"
+ 
+        # DAC JAKIES OGRANICZENIA NA PODAWANE WIELKOSCI!!!
+ 
+        # mozna rozciagac widgety na pare pol 
+ 
+        # zmiana predkosci gry
+        labelkaPredk = QtGui.QLabel("Choose game speed (the smaller the faster):")
+        self.board.addWidget(labelkaPredk, 0, 0)
 
+        PredkCombobox = QtGui.QComboBox(self)   
+        PredkCombobox.addItem("500")
+        PredkCombobox.addItem("400")
+        PredkCombobox.addItem("300")
+        PredkCombobox.addItem("200")
+        PredkCombobox.addItem("100")
+        PredkCombobox.activated[str].connect(self.updateSpeed)
+        self.board.addWidget(PredkCombobox, 0, 1)  
+        
+ 
+        # zmiana interwalow dla jedzenia
+        labelkaJedz = QtGui.QLabel("Choose food time interval:")
+        self.board.addWidget(labelkaJedz, 1, 0)
+        
+        JedzCombobox = QtGui.QComboBox(self)   
+        JedzCombobox.addItem("5000")
+        JedzCombobox.addItem("4000")
+        JedzCombobox.addItem("3000")
+        JedzCombobox.addItem("2000")
+        JedzCombobox.addItem("1000")
+        JedzCombobox.activated[str].connect(self.updateFood)
+        self.board.addWidget(JedzCombobox, 1, 1)  
+        
+    
+        # zmiana trawki
+        labelkaTlo = QtGui.QLabel("Choose background:")
+        self.board.addWidget(labelkaTlo, 2,0)
+        
+        
+        TloCombobox = QtGui.QComboBox(self)   
+        TloCombobox.addItem("light texture")
+        TloCombobox.addItem("dark texture")
+        TloCombobox.addItem("light green")
+        TloCombobox.addItem("dark green")
+        self.board.addWidget(TloCombobox, 2, 1)        
+        TloCombobox.activated[str].connect(self.updateTlo)
+        
 
+        # przycisk ok
+        przyciskOK = QtGui.QPushButton('Change settings', self)
+        przyciskOK.clicked.connect(self.updateKrtek)
+        przyciskOK.resize(przyciskOK.sizeHint())
+        self.board.addWidget(przyciskOK, 5,1)
 
-
-
-
-
-
-
-
+    def updateKrtek(self):
+        print(self.predkosc)
+        print(self.jedzenieCzas)
+        print(self.tlo)
+        
+        # tu cos nie dziala, dac to moe sygnalem --!!!!!
+        self.parent.plansza.close()
+        self.parent.plansza = Plansza(self.parent,self.parent.rozmiarOkna)
+        self.parent.plansza.show()# tu dodac argumenty w init
+        self.close()
+    
+    # moze bez przyciskow
+    def updateSpeed(self, text):
+        self.predkosc = int(text)
+        
+    def updateFood(self, text):
+        self.jedzenieCzas = int(text)
+        
+    def updateTlo(self, text):
+        self.tlo = text
 
 
 class Plansza(QtGui.QFrame):
