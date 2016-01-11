@@ -2,37 +2,18 @@
 # -*- coding: utf-8 -*-
 """
 
-TUTAJ POWINIEN ZNALEZC SIE PIEKNY I INFORMATYWNY OPIS SKRYPTU
+KRTEK.py - program glowny gry Krtek
 
-WYKORZYSTAC ARGUMENTY z konsoli (NP. JAKO TAJNE KODY DO TAJNEJ GRY)
-
-# dac message boxa przy wychodzeniu z gry z krecikiem
-# gdy game over - ahjo dzwiek
-# obracanie krecika jak zmiana strony
-# zrobic troche chwili zanim sie wlaczy krecik
+autor: Ewa Baranowska
+last edited: 11.01.2016
 
 
-# uzupelnic opcje - kolor tla, moze chodzika, moze szybkosc gry, rozmiar okna
-# posprzatac kod
-
-# w menu - nowa gra?? - zamknij obecny example Krtek, otworz nowy, albo planszy raczej nowy?
 # wymiary okna automatyczne!!
-# jak ustawienia zmienimy to co wtedy? nowa plansza sie laduje??? i zamykamy ta obecna?
-# czy cala gra jeszcze raz sie uruchamia? - nowa gra na tej samej zasadzie bedzie
-####zmiana wielkosci okna
-        ### zmiana krecikochodzika
 
 
-http://stackoverflow.com/questions/13422995/set-qlineedit-to-accept-only-numbers
-# zrobić Qline z opcja tylko liczb wpisania (albo comboboxa z szybkościami)
-# to samo dla jedzenia
-# combobox dla  trawki
-
-
-# zrobic wydarzenie z przyciskiem ok - przypisuje zmiennym globalbym te lokalne wartosci i inicjuje od nowa plansze
-# nie dziala tworzenie nowej planszy - moze dac to tym singal
-# pamietac by zamienic napisy tla na nazwy plikow .png!!!
-
+# nowa gra zrobić?
+# posprzatac
+# te napisy po czesku
 
 """
 import sys, time, random
@@ -155,9 +136,18 @@ class Krtek(QtGui.QMainWindow):
         """)
         tekst.setOpenExternalLinks(True) # by otworzylo link po kliknieciu
         l.addWidget(tekst)
+                
+        h = QtGui.QHBoxLayout()
+        przyciskOK = QtGui.QPushButton('OK', self)
+        przyciskOK.clicked.connect(about.close)
+        przyciskOK.setFixedSize(100,30) 
+        przyciskOK.move(150,150)
+        h.addWidget(przyciskOK)
+        l.addLayout(h)
         about.setLayout(l)
         about.show()
         
+    
 
 class oknoOpcji(QtGui.QDialog):
     
@@ -181,8 +171,8 @@ class oknoOpcji(QtGui.QDialog):
         
         
         
-        self.predkosc = 0
-        self.jedzenieCzas = 0
+        self.predkosc = 300
+        self.jedzenieCzas = 4000
         self.tlo = "trawka.png"
  
         # DAC JAKIES OGRANICZENIA NA PODAWANE WIELKOSCI!!!
@@ -237,16 +227,7 @@ class oknoOpcji(QtGui.QDialog):
         przyciskOK.resize(przyciskOK.sizeHint())
         self.board.addWidget(przyciskOK, 5,1)
 
-    def updateKrtek(self):
-        print(self.predkosc)
-        print(self.jedzenieCzas)
-        print(self.tlo)
-        
-        # tu cos nie dziala, dac to moe sygnalem --!!!!!
-        self.parent.plansza.close()
-        self.parent.plansza = Plansza(self.parent,self.parent.rozmiarOkna)
-        self.parent.plansza.show()# tu dodac argumenty w init
-        self.close()
+   
     
     # moze bez przyciskow
     def updateSpeed(self, text):
@@ -256,7 +237,35 @@ class oknoOpcji(QtGui.QDialog):
         self.jedzenieCzas = int(text)
         
     def updateTlo(self, text):
+        
+        if text == "light texture":
+            text = "trawka.png"
+        elif text == "dark texture":
+            text = "trawka1.png"
+        elif text == "light green":
+            text = "trawka2.png"
+        elif text == "dark green":
+            text = "trawka3.png"
         self.tlo = text
+
+    def updateKrtek(self):
+        
+        # tu cos nie dziala, dac to moe sygnalem --!!!!!
+        #self.parent.plansza.close()
+        self.parent.plansza = Plansza(self.parent,self.parent.rozmiarOkna, self.predkosc, self.jedzenieCzas, self.tlo)
+        self.parent.setCentralWidget(self.parent.plansza)
+        self.parent.plansza.doStatusBara[str].connect(self.parent.statusbar.showMessage)
+        self.parent.plansza.show()# tu dodac argumenty w init
+        #self.parent.update()
+        #self.parent.plansza.update()
+        self.close()
+        
+        # nie pokazuje sie np. na statusbarze wynik czy cokolwiek
+        # jakis update planszy
+        # dodac do kontstruktora te szybGry itd
+
+
+
 
 
 class Plansza(QtGui.QFrame):
@@ -265,10 +274,14 @@ class Plansza(QtGui.QFrame):
     doStatusBara = QtCore.pyqtSignal(str)
     
     
-    def __init__(self, parent, rozmiarOkna_Gl):
+    def __init__(self, parent, rozmiarOkna_Gl, predkosc = 300, jedzenie = 4000, tlo = "trawka1.png"):
         
         super(Plansza, self).__init__(parent)
+        self.szybkoscGry = predkosc
+        self.czasJedzonka = jedzenie
+        self.tlo = tlo 
         self.initPlansza(rozmiarOkna_Gl)
+
         
     def initPlansza(self,rozmiarOkna_Gl):
         
@@ -276,7 +289,6 @@ class Plansza(QtGui.QFrame):
         #pod to
         self.rozmiarOkna_Gl = rozmiarOkna_Gl        
         self.szerPlanszy = 11 
-        self.szybkoscGry = 300
         
         # LAYOUT GRY
         grid = QtGui.QGridLayout()
@@ -285,7 +297,7 @@ class Plansza(QtGui.QFrame):
         self.board = grid
 
         # tło
-        trawka = QtGui.QPixmap("trawka1.png")  
+        trawka = QtGui.QPixmap(self.tlo)  
 
         positions = [(i,j) for i in range(self.szerPlanszy) for j in range(self.szerPlanszy)]
         
@@ -308,7 +320,6 @@ class Plansza(QtGui.QFrame):
         grid.addWidget(self.jedzonko,self.row_jedzonko,self.col_jedzonko)
         
         self.jedzonkoTimer = QtCore.QBasicTimer()
-        self.czasJedzonka = 4000
         self.jedzonkoTimer.start(self.czasJedzonka, self)  
 
         # chodzik
