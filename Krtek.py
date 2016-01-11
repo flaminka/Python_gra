@@ -9,11 +9,7 @@ last edited: 11.01.2016
 
 
 # wymiary okna automatyczne!!
-
-
-# nowa gra zrobić?
 # posprzatac
-# te napisy po czesku
 
 """
 import sys, time, random
@@ -180,35 +176,35 @@ class oknoOpcji(QtGui.QDialog):
         # mozna rozciagac widgety na pare pol 
  
         # zmiana predkosci gry
-        labelkaPredk = QtGui.QLabel("Choose game speed (the smaller the faster):")
+        labelkaPredk = QtGui.QLabel("Zvolte rychlost (hra):")
         self.board.addWidget(labelkaPredk, 0, 0)
 
         PredkCombobox = QtGui.QComboBox(self)   
-        PredkCombobox.addItem("500")
-        PredkCombobox.addItem("400")
-        PredkCombobox.addItem("300")
-        PredkCombobox.addItem("200")
-        PredkCombobox.addItem("100")
+        PredkCombobox.addItem("1x")
+        PredkCombobox.addItem("2x")
+        PredkCombobox.addItem("3x")
+        PredkCombobox.addItem("4x")
+        PredkCombobox.addItem("5x")
         PredkCombobox.activated[str].connect(self.updateSpeed)
         self.board.addWidget(PredkCombobox, 0, 1)  
         
  
         # zmiana interwalow dla jedzenia
-        labelkaJedz = QtGui.QLabel("Choose food time interval:")
+        labelkaJedz = QtGui.QLabel("Zvolte rychlost (potravina):")
         self.board.addWidget(labelkaJedz, 1, 0)
         
         JedzCombobox = QtGui.QComboBox(self)   
-        JedzCombobox.addItem("5000")
-        JedzCombobox.addItem("4000")
-        JedzCombobox.addItem("3000")
-        JedzCombobox.addItem("2000")
-        JedzCombobox.addItem("1000")
+        JedzCombobox.addItem("1x")
+        JedzCombobox.addItem("2x")
+        JedzCombobox.addItem("3x")
+        JedzCombobox.addItem("4x")
+        JedzCombobox.addItem("5x")
         JedzCombobox.activated[str].connect(self.updateFood)
         self.board.addWidget(JedzCombobox, 1, 1)  
         
     
         # zmiana trawki
-        labelkaTlo = QtGui.QLabel("Choose background:")
+        labelkaTlo = QtGui.QLabel("Zvolte pozadí:")
         self.board.addWidget(labelkaTlo, 2,0)
         
         
@@ -222,7 +218,7 @@ class oknoOpcji(QtGui.QDialog):
         
 
         # przycisk ok
-        przyciskOK = QtGui.QPushButton('Change settings', self)
+        przyciskOK = QtGui.QPushButton('Změna nastavení', self)
         przyciskOK.clicked.connect(self.updateKrtek)
         przyciskOK.resize(przyciskOK.sizeHint())
         self.board.addWidget(przyciskOK, 5,1)
@@ -231,9 +227,31 @@ class oknoOpcji(QtGui.QDialog):
     
     # moze bez przyciskow
     def updateSpeed(self, text):
+        
+        if text == "1x":
+            text = "500"
+        elif text == "2x":
+            text = "400"
+        elif text == "3x":
+            text = "300"
+        elif text == "4x":
+            text = "200"  
+        elif text == "5x":
+            text = "100"
         self.predkosc = int(text)
         
     def updateFood(self, text):
+        
+        if text == "1x":
+            text = "5000"
+        elif text == "2x":
+            text = "4000"
+        elif text == "3x":
+            text = "3000"
+        elif text == "4x":
+            text = "2000"  
+        elif text == "5x":
+            text = "1000"
         self.jedzenieCzas = int(text)
         
     def updateTlo(self, text):
